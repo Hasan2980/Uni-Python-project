@@ -1,0 +1,250 @@
+robots = {}
+workers = {}
+tasks = []
+products = []
+
+def add_robot(robot_id):
+    try:
+        if not robot_id.strip(): #This looks for whether the robot ID is empty or used with spaces
+            raise ValueError("Robot ID field is required this cannot be empty or filled with spaces.")
+        if robot_id in robots: #This verifies whether the robot is currently existing
+            raise ValueError(f"Named robot {robot_id} is already on the worker(s) list.")
+        else:
+            robots[robot_id] = 'idle' #This is the addition of robots if they don't exist
+            print(f"Named Robot {robot_id} has been successfully added to the worker list!")
+
+    except ValueError as e:
+        print(f"ValueError: {e}")
+    except Exception as e:
+        print(f"There has been an unexpected error: {e}")
+
+
+
+def remove_robot(robot_id):
+    try:
+        if not robot_id.strip(): #Sreipis usenin this case as a string is being dealt with and string effieciently deals with wrong string inputs being entered
+            raise ValueError("Robot ID field is required this cannot be empty or filled with spaces.")
+        if robot_id not in robots:
+            raise ValueError(f"Named Robot {robot_id} does not exist within database")
+        if robots[robot_id] != 'idle':
+            raise ValueError(f"Named Robot {robot_id} cannot be removed due to not existing")
+
+        del robots[robot_id]
+        print(f"Named Robot {robot_id} has been successfully removed from the wroker(s) list!")
+    except ValueError as e:
+        print(f"valueError: {e}")
+
+def add_worker(worker_id):
+    try:
+        if not worker_id.strip():
+            raise ValueError("Worker ID field is required this cannot be empty or filled with spaces.")
+        if worker_id in workers:
+            raise ValueError(f"Named Worker {worker_id} is already on the worker(s) list.")
+        workers[worker_id] = 'idle'
+        print(f"Worker {worker_id} has been successfully added!")
+    except ValueError as e:
+        print(f"valueError:{e}")
+
+def remove_worker(worker_id):
+    try:
+        if worker_id.strip():
+            raise ValueError(f"Named Robot {robot_id} does not exist within database")
+        if workers[worker_id] != 'idle':
+            raise ValueError(f"Unable to remove named worker {worker_id} as they are active.") #removal of worker
+
+        del workers[worker_id]
+        print(f"Named Worker {worker_id} has been successfully removed from the worker(s) list!")
+    except ValueError as e:
+        print(f"ValueError: {e}")
+
+def assign_task(task_type, duration, required_robots, required_workers):
+    try:
+        if not task_type.strip():
+            raise ValueError("The task type is required to be a non-empty string.")
+        # This validates whether there are enough resources available to use
+        available_robots = [r for r, status in robots.items() if status == 'idle']
+        available_workers = [w for w, status in workers.items() if status == 'idle']
+
+        if len(available_robots) < required_robots or len(available_workers) < required_workers:
+            raise ValueError(" Error there are not enough available resources to assign to the task.")
+
+
+        assigned_robots = available_robots[:required_robots]
+        assigned_workers = available_workers[:required_workers]
+
+        for robot in assigned_robots:
+            robots[robot] = 'working'
+                                    #shows what the workers/robots current statuses are
+        for worker in assigned_workers:
+            workers[worker] = 'working'
+        #This  is what makes the task and then stores it
+        task = {
+            'type': task_type,
+            'duration': duration,
+            'robots': assigned_robots,
+            'workers': assigned_workers,
+            'status': 'in progress'
+        }
+        tasks.append(task)
+        print(f"Task {task_type} assigned to robots {assigned_robots} and workers {assigned_workers}.")
+    except ValueError as e:
+        print(f"ValueError: {e}")
+
+def assign_product(product_name, steps):
+    try:
+        product_name = product_name.strip() #.strip is used as product name will always be entered as a string therefore no need for isinstane
+        if not product_name:
+            raise ValueError("The variable (product name) is unable to be empty or use spaces")
+
+
+        needed_variables = {'worker(s)', 'robot(s)', 'type', 'duration', 'status' }
+
+        #This part of the code ensures that all the lsited variables above are in usage by the use of a loop
+        for variable in needed_variables:
+            if variable not in steps:
+                raise ValueError(f"every step has to have the variables: {needed_variables} Missing variable: {variable}")
+        #This segmentn makes sure that the value of each steps are valid
+
+        if not steps['type'].strip():
+            raise ValueError("step 'type' is unable to be an empty str")
+        steps['type'] = steps['type'].strip()
+
+        if steps['status'] != 'not started':
+            raise ValueError("stage 'status' stage must hold the value 'not started'")
+
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    product = {
+        'name': product_name,
+        'steps': steps,
+        'current_step': 0
+    }
+    products.append(product)
+    print(f"Desired Product {product_name} in contrast with {len(steps)} stages.")
+
+
+def monitor_product():
+    try:
+
+        for product in products:
+
+        #This snippet follows the same route as the last making sure the now named variables will also be in the correct format of dictionary
+            essential_variables = {'current_step', 'name', 'steps'}
+            if not all(variable in product for variable in essential_variables): #Agai this function if not all is included to group these named variables as one to output the same error code
+                raise ValueError(f"The desired product {product} does not have the essential variables")
+
+            if not product['name'].strip(): # both functions used together allow errors to not slip through and prevent code from breaking due to misinputs
+                raise ValueError(f"The product name: {product['name']} is not recognised must be filled in ")
+
+        #repeated process of initialising the steps etc
+            if not product['name'].strip():
+                raise ValueError(f"product name: {product['name']} not recognised string cant be empty")
+            if product['current_step'] >= len(product['steps']):
+                print(f"The assembly of the Product {product['name']} has been successfully completed!")
+            continue
+
+            step = product['steps'][product['current_step']]
+            if step['status'] == 'not started':
+                assign_task(step['type'], step['duration'], step['robots'], step['workers'])
+                step['status'] = 'in progress'
+            elif step['status'] == 'completed':
+                product['current_step'] += 1
+
+    except ValueError as e:
+        print(f"ValueError: {e}")
+    except Exception as e:
+        print(f"There has been an unexpected error: {e}")
+
+def display_status():
+    try:
+
+        print("workers:")
+        for worker_id, status in workers.items():
+             # This will make sure that both satus and robot_id remain strings
+            if not worker_id.strip():
+                raise ValueError(f"Entered worker ID:{worker_id} is not valid, please try again")
+            if not status.strip():
+                raise ValueError(f"Error incorrect worker status {worker_id}:{status}, The status cannot be left empty")
+            print(f"  Worker {worker_id}: {status}")
+
+        print("robots:")
+        for robot_id, status in robots.items():
+            if not robot_id.strip():
+                raise ValueError(f"Entered robot ID:{robot_id} is not valid, please try again")
+            if not status.strip():
+                raise ValueError(f"Error, incorrect robot status {robot_id}:{status}, The status canamot be left empty")
+            print(f" Robot {robot_id}: {status}")
+
+    except ValueError as e:
+        print(f"Error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+def main():
+    while True:
+        print("\n cell management:")
+        print("1. Add Robot")
+        print("2. Remove Robot")
+        print("3. Add Worker")
+        print("4. Remove Worker")
+        print("5. Assign Task")
+        print("6. Assign Product")
+        print("7. Monitor Product")
+        print("8. Display Status")
+        print("9. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            robot_id = input("Enter robot ID: ")
+            add_robot(robot_id)
+        if choice == '2':
+            robot_id = input("Enter robot ID: ")
+            remove_robot(robot_id)
+        if choice == '3':
+            worker_id = input("Enter worker ID: ")
+            add_worker(worker_id)
+        if choice == '4':
+            worker_id = input("Enter worker ID: ")
+            remove_worker(worker_id)
+        if choice == '5':
+            task_type = input("Enter task type: ")
+            duration = int(input("Enter task duration: "))
+            required_robots = int(input("Enter number of robots required: "))
+            required_workers = int(input("Enter number of workers required: "))
+            assign_task(task_type, duration, required_robots, required_workers)
+        if choice == '6':
+            product_name = input("Enter product name: ")
+            num_steps = int(input("Enter number of steps: "))
+            steps = []
+            for i in range(num_steps):
+                print(f"Step {i + 1}:")
+                step_type = input("  Enter step type: ")
+                duration = int(input("  Enter step duration: "))
+                robots = int(input("  Enter number of robots required: "))
+                workers = int(input("  Enter number of workers required: "))
+                steps.append({
+                    'type': step_type,
+                    'duration': duration,
+                    'robots': robots,
+                    'workers': workers,
+                    'status': 'not started'
+                })
+            assign_product(product_name, steps)
+        if choice == '7':
+            monitor_product()
+        if choice == '8':
+            display_status()
+        if choice == '9':
+            print("Ending...")
+            break
+        else:
+            continue
+            #print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
